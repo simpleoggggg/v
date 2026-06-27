@@ -1,35 +1,37 @@
-# Use Ubuntu 22.04 base
 FROM ubuntu:22.04
 
-# Avoid interactive prompts
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Update and install system dependencies
 RUN apt-get update && apt-get install -y \
     python3 \
     python3-pip \
-    nodejs \
-    npm \
     unzip \
-    bash \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Set working directory
 WORKDIR /app
 
-# Copy project files
 COPY . .
 
-# Ensure permissions for the application folder
-RUN chmod -R 755 /app
+# 1. Unzip the file FIRST
+# 2. Check for requirements.txt in the current directory and subdirectories
+RUN unzip -o h.zip && \
+    chmod -R 755 /app && \
+    if [ -f requirements.txt ]; then \
+        echo "Requirements found!"; \
+    else \
+        echo "requirements.txt NOT found in root, searching..."; \
+        find . -name "requirements.txt"; \
+    fi
 
-# Upgrade pip and install requirements
+# Upgrade pip and install if file exists
 RUN python3 -m pip install --upgrade pip && \
-    pip3 install -r requirements.txt
+    if [ -f requirements.txt ]; then \
+        pip3 install -r requirements.txt; \
+    else \
+        echo "Skipping pip install: file not found"; \
+    fi
 
-# Railway-compatible port
 EXPOSE 5000
 
-# Start the application
 CMD ["python3", "app.py"]
